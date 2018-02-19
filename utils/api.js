@@ -1,48 +1,74 @@
-import { AsyncStorage } from 'react-native';
+import {AsyncStorage} from 'react-native';
 
-const DECKS_STORAGE_KEY = 'flascards:decks';
+const data = [
+    {
+        title: 'Title Text',
+        cardCount: 3,
+        key: 'item1'
+    },
+    {
+        title: 'Different Text',
+        cardCount: 3,
+        key: 'item2'
+    },
+    {
+        title: 'Some Text',
+        cardCount: 3,
+        key: 'item3'
+    }
+];
 
-/**
-**function to get the decks
-**/
-export  function getDecks() {
-    console.log('getDecks');
-    return AsyncStorage.getItem(DECKS_STORAGE_KEY)
-        .then(results => {
-            console.log('results: ', results);
-            if (!results) return {};
-            return JSON.parse(results);
-        })
-        .catch(error => console.log(error));
-}
 
-/**
-**function to save a deck
-**/
-export function saveDeckTitle(key, title) {
-    console.log('key and title', key, title);
-    return AsyncStorage.mergeItem(
-        DECKS_STORAGE_KEY,
-        JSON.stringify({
-            [key]: {
-                title,
-                questions: []
-            }
-        })
-    );
-}
-
-/**
-**function to save a card to a deck
-**/
-export function addCardToDeck(deckName, card) {
-    console.log('api addCardToDeck deckName and card  ', deckName, card);
-    return AsyncStorage.getItem(DECKS_STORAGE_KEY)
-        .then(data => {
-            const decks = JSON.parse(data);
-            decks[deckName].questions.push(card);
-            //console.log('api addCardToDeck decks: ', decks);
-            return AsyncStorage.setItem(DECKS_STORAGE_KEY, JSON.stringify(decks));
+export function getDecks() {
+    return AsyncStorage.getAllKeys().then(keys => {
+        return AsyncStorage.multiGet(keys).then(stores => {
+            return stores.map((result, i, store) => {
+                // get at each store's key/value so you can work with it
+                let key = store[i][0];
+                let value = JSON.parse(store[i][1]);
+                if (value) {
+                    return {
+                        key,
+                        title: value.title,
+                        questions: value.questions
+                    };
+                }
+            }).filter(items => {
+                if (items) {
+                    return typeof items.questions !== 'undefined'
+                }
+            });
         });
+    });
 }
 
+export function getDeck(id) {
+    return AsyncStorage.getItem(id);
+}
+
+export function saveDeckTitle(title) {
+    try {
+        return AsyncStorage.setItem(title, JSON.stringify({title, questions: []}));
+    } catch (error) {
+        console.log(error);
+    }
+}
+
+export function addCardToDeck(title, card) {
+    // console.log("add card", title, card.question, card.answer);
+    try {
+        AsyncStorage.getItem(title).then(result => {
+            const data = JSON.parse(result);
+
+            let questions = data.questions;
+            questions.push(card);
+
+            AsyncStorage.mergeItem(title, JSON.stringify({
+                questions
+            }));
+        });
+    } catch (error) {
+        console.log(error);
+    }
+    return "thanks"
+}

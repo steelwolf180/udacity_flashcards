@@ -1,31 +1,31 @@
-export const RECEIVE_DECKS = 'RECEIVE_DECKS';
-export const ADD_DECK = 'ADD_DECK';
-export const ADD_CARD = 'ADD_CARD';
+import {AsyncStorage} from 'react-native';
+import {getDeck, getDecks} from '../utils/api';
 
-export function receiveEntries(decks) {
-    return {
-        type: RECEIVE_DECKS,
-        decks
-    };
+import {DELETE_DECK, FETCH_DECK_DB, FETCH_DECK_INFO} from './types';
+
+
+export function fetchDeckDB() {
+    return (dispatch) => {
+        getDecks().then(data => dispatch({type: FETCH_DECK_DB, payload: data}));
+    }
 }
 
-export function addDeck(deckName) {
-	console.log('actions addDeck deckName: ', deckName);
-    return {
-        type: ADD_DECK,
-        deck: {
-        	[deckName]: {
-        		title: deckName,
-        		questions: []
-        	}
-        }
-    };
+export function deleteDeck(removeTitle) {
+    return (dispatch) => {
+        AsyncStorage.removeItem(removeTitle)
+            .then(getDecks().then(data => {
+                dispatch({type: DELETE_DECK, payload: data})
+            })
+                .catch(err => console.log(err)))
+            .catch(err => console.log(err));
+    }
 }
 
-export function addCard(deckName, card) {
-    return {
-        type: ADD_CARD,
-        deckName,
-        card
-    };
+export function getDeckDetails(entryId) {
+    return (dispatch) => {
+        getDeck(entryId)
+            .then(cardDeck => {
+                dispatch({type: FETCH_DECK_INFO, payload: JSON.parse(cardDeck)})
+            });
+    }
 }
